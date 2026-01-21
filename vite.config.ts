@@ -2,8 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const BASE_URL = '/pwa-activity-tracker/';
+
 // https://vite.dev/config/
 export default defineConfig({
+  base: BASE_URL,
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +20,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: BASE_URL,
+        start_url: BASE_URL,
         icons: [
           {
             src: 'pwa-192x192.png',
