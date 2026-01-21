@@ -11,28 +11,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon-96x96.png', 'favicon-192x192.png', 'favicon-512x512.png'],
-      manifest: {
-        name: 'Activity Tracker',
-        short_name: 'Activities',
-        description: 'Track your activities and habits',
-        theme_color: '#1976d2',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'portrait',
-        icons: [
-          {
-            src: 'favicon-96x96.png',
-            sizes: '96x96',
-            type: 'image/png',
-          },
-          {
-            src: 'favicon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-        ]
-      },
+      includeAssets: ['favicon-96x96.png', 'favicon-192x192.png', 'favicon-512x512.png', 'manifest.webmanifest'],
+      manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
