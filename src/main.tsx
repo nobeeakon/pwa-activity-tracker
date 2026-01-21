@@ -11,7 +11,7 @@ import App from './App.tsx'
 import { registerSW } from 'virtual:pwa-register'
 
 // Register service worker
-const updateSW = registerSW({
+registerSW({
   onNeedRefresh() {
     console.log('New content available, refresh to update');
   },
