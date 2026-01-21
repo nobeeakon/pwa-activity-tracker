@@ -20,26 +20,17 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: BASE_URL,
-        start_url: BASE_URL,
         icons: [
           {
             src: 'favicon-96x96.png',
             sizes: '96x96',
             type: 'image/png',
-            purpose: 'any'
           },
           {
             src: 'favicon-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
-          {
-            src: 'favicon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
         ]
       },
       workbox: {
