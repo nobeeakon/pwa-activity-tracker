@@ -8,7 +8,11 @@ import {
   Button,
   InputAdornment,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  ToggleButton,
+  ToggleButtonGroup,
+  Box,
+  Typography
 } from '@mui/material';
 import type { Activity } from '../../types/activity';
 import { activityService } from '../../db/activityService';
@@ -24,9 +28,11 @@ type FormState = {
     name: string;
     description: string;
     everyHours: number | undefined;
+    excludedDays: number[] | undefined;
   };
   error: {
     name?: string;
+    excludedDays?: string;
   };
 };
 
@@ -35,7 +41,8 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
     data: {
       name: activity?.name ?? '',
       description: activity?.description ?? '',
-      everyHours: activity?.everyHours
+      everyHours: activity?.everyHours,
+      excludedDays: activity?.excludedDays
     },
     error: {}
   });
@@ -59,7 +66,8 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
         await activityService.updateActivity(activity.id, {
           name: formState.data.name.trim(),
           description: formState.data.description.trim(),
-          everyHours: formState.data.everyHours
+          everyHours: formState.data.everyHours,
+          excludedDays: formState.data.excludedDays
         });
       } else {
         // Create new activity
@@ -68,7 +76,8 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
           description: formState.data.description.trim(),
           createdAt: new Date(),
           records: [],
-          everyHours: formState.data.everyHours
+          everyHours: formState.data.everyHours,
+          excludedDays: formState.data.excludedDays
         });
       }
       onClose();
@@ -122,7 +131,8 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
                   ...prev,
                   data: {
                     ...prev.data,
-                    everyHours: e.target.checked ? 24 : undefined
+                    everyHours: e.target.checked ? 24 : undefined,
+                    excludedDays: e.target.checked ? prev.data.excludedDays : undefined
                   }
                 }));
               }}
@@ -132,25 +142,69 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
           sx={{ mb: 1 }}
         />
         {hasSchedule && (
-          <TextField
-            margin="dense"
-            label="Repeat Every"
-            type="number"
-            fullWidth
-            required
-            value={everyDays}
-            onChange={(e) => {
-              const days = Math.max(0.1, parseFloat(e.target.value) || 0.1);
-              setFormState(prev => ({
-                ...prev,
-                data: { ...prev.data, everyHours: days * 24 }
-              }));
-            }}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">days</InputAdornment>,
-              inputProps: { min: 1, step: 1 }
-            }}
-          />
+          <>
+            <TextField
+              margin="dense"
+              label="Repeat Every"
+              type="number"
+              fullWidth
+              required
+              value={everyDays}
+              onChange={(e) => {
+                const days = Math.max(0.1, parseFloat(e.target.value) || 0.1);
+                setFormState(prev => ({
+                  ...prev,
+                  data: { ...prev.data, everyHours: days * 24 }
+                }));
+              }}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">days</InputAdornment>,
+                inputProps: { min: 1, step: 1 }
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Exclude days (optional):
+              </Typography>
+              <ToggleButtonGroup
+                value={formState.data.excludedDays || []}
+                onChange={(_, newDays: number[]) => {
+                  // Prevent selecting all 7 days
+                  if (newDays.length === 7) {
+                    setFormState(prev => ({
+                      ...prev,
+                      error: { ...prev.error, excludedDays: 'Cannot exclude all days' }
+                    }));
+                    return;
+                  }
+                  setFormState(prev => ({
+                    data: { ...prev.data, excludedDays: newDays.length > 0 ? newDays : undefined },
+                    error: { ...prev.error, excludedDays: undefined }
+                  }));
+                }}
+                size="small"
+                fullWidth
+              >
+                <ToggleButton value={0}>Su</ToggleButton>
+                <ToggleButton value={1}>Mo</ToggleButton>
+                <ToggleButton value={2}>Tu</ToggleButton>
+                <ToggleButton value={3}>We</ToggleButton>
+                <ToggleButton value={4}>Th</ToggleButton>
+                <ToggleButton value={5}>Fr</ToggleButton>
+                <ToggleButton value={6}>Sa</ToggleButton>
+              </ToggleButtonGroup>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                Selected days won't count for scheduling
+              </Typography>
+              {formState.error.excludedDays && (
+                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                  {formState.error.excludedDays}
+                </Typography>
+              )}
+            </Box>
+          </>
         )}
       </DialogContent>
       <DialogActions>

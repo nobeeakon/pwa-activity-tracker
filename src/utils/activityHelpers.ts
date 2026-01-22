@@ -1,5 +1,5 @@
-import { format, formatDistanceToNow } from 'date-fns';
-import type { ActivityStatus } from '../types/activity';
+import { format, formatDistanceToNow, addHours, differenceInHours, max } from 'date-fns';
+import type { Activity, ActivityStatus } from '../types/activity';
 
 // Maximum length for record notes
 export const MAX_NOTE_LENGTH = 300;
@@ -34,4 +34,68 @@ export function formatRecordDate(date: Date): string {
   const formattedDate = format(date, 'MMM d, yyyy');
   const relativeTime = formatDistanceToNow(date, { addSuffix: true });
   return `${formattedDate} (${relativeTime})`;
+}
+
+// Calculate next due date considering excluded days
+export function calculateNextDueDate(
+  lastRecordDate: Date,
+  everyHours: number,
+  excludedDays?: number[]
+): Date {
+  // Calculate base next due date
+  let nextDue = addHours(lastRecordDate, everyHours);
+
+  // If no excluded days, return immediately
+  if (!excludedDays || excludedDays.length === 0) {
+    return nextDue;
+  }
+
+  // Advance by 24 hours while date falls on excluded day (max 7 iterations for safety)
+  let iterations = 0;
+  while (excludedDays.includes(nextDue.getDay()) && iterations < 7) {
+    nextDue = addHours(nextDue, 24);
+    iterations++;
+  }
+
+  return nextDue;
+}
+
+// Calculate activity status including all timing information
+export function calculateActivityStatus(activity: Activity): {
+  lastRecordedDate: Date | null;
+  hoursSinceLastRecord: number | null;
+  hoursUntilDue: number | null;
+  status: ActivityStatus | null;
+} {
+  // Find last record date
+  const lastRecordedDate =
+    activity.records.length > 0
+      ? max(activity.records.map((r) => r.date))
+      : null;
+
+  // Calculate hours since last record
+  const hoursSinceLastRecord = lastRecordedDate
+    ? differenceInHours(new Date(), lastRecordedDate)
+    : null;
+
+  // Calculate next due date and status if activity has scheduling
+  let hoursUntilDue: number | null = null;
+  let status: ActivityStatus | null = null;
+
+  if (activity.everyHours && lastRecordedDate) {
+    const nextDueDate = calculateNextDueDate(
+      lastRecordedDate,
+      activity.everyHours,
+      activity.excludedDays
+    );
+    hoursUntilDue = differenceInHours(nextDueDate, new Date());
+    status = calculateStatus(hoursUntilDue);
+  }
+
+  return {
+    lastRecordedDate,
+    hoursSinceLastRecord,
+    hoursUntilDue,
+    status,
+  };
 }

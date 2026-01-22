@@ -18,13 +18,12 @@ import {
   DialogActions
 } from '@mui/material';
 import { MoreVert, ExpandMore, ExpandLess } from '@mui/icons-material';
-import { differenceInHours, addHours, max } from 'date-fns';
 import type { Activity, ActivityStatus } from '../../types/activity';
 import { activityService } from '../../db/activityService';
 import { statusColors } from '../../theme/theme';
 import { MonthCalendar } from '../Calendar/MonthCalendar';
 import { RecordActivityDialog } from './RecordActivityDialog';
-import { calculateStatus, formatTimeDuration } from '../../utils/activityHelpers';
+import { calculateActivityStatus, formatTimeDuration } from '../../utils/activityHelpers';
 
 type ActivityCardProps = {
   activity: Activity;
@@ -40,43 +39,8 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
   const menuOpen = Boolean(anchorEl);
 
   const { lastRecordedDate, hoursSinceLastRecord, hoursUntilDue, status } = useMemo(() => {
-    const dates = activity.records.map(r => r.date);
-    const lastDate = dates.length > 0
-      ? max(dates)
-      : null;
-
-    const hoursSince = lastDate
-      ? differenceInHours(new Date(), lastDate)
-      : null;
-
-
-    if (!activity.everyHours) {
-        return {
-        lastRecordedDate: lastDate,
-        hoursSinceLastRecord: hoursSince,
-        hoursUntilDue: undefined,
-        status: undefined
-        };
-    }
-
-    const nextDue = lastDate
-    ? addHours(lastDate, activity.everyHours)
-    : null;
-
-    const hoursUntil = nextDue
-    ? differenceInHours(nextDue, new Date())
-    : null;
-
-    const activityStatus = hoursUntil !== null ? calculateStatus(hoursUntil) : undefined;
-
-    return {
-      lastRecordedDate: lastDate,
-      hoursSinceLastRecord: hoursSince,
-      hoursUntilDue: hoursUntil,
-      status: activityStatus
-    };
-   
-  }, [activity.records, activity.everyHours]);
+    return calculateActivityStatus(activity);
+  }, [activity]);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();

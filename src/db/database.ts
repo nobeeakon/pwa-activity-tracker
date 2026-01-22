@@ -54,4 +54,27 @@ db.version(2).stores({
   console.log(`✅ Migration complete: ${totalActivities} activities processed, ${totalRecordsTransformed} records transformed`);
 });
 
+// Version 3: Add excludedDays field
+db.version(3).stores({
+  activities: '++id, name, createdAt'
+}).upgrade(async (trans) => {
+  console.log('🔄 Starting database migration from v2 to v3...');
+
+  const activities = await trans.table('activities').toArray();
+  let migratedCount = 0;
+
+  for (const activity of activities) {
+    // Initialize excludedDays as empty array if not present
+    if (!activity.excludedDays) {
+      await trans.table('activities').update(activity.id, {
+        excludedDays: []
+      });
+      migratedCount++;
+      console.log(`  ✓ Initialized excludedDays for activity "${activity.name}"`);
+    }
+  }
+
+  console.log(`✅ Migration complete: ${migratedCount} activities updated with excludedDays field`);
+});
+
 export { db };

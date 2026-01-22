@@ -27,7 +27,6 @@ import {
   Save as SaveIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { differenceInHours, addHours, max } from 'date-fns';
 import { useActivity } from '../hooks/useActivity';
 import { activityService } from '../db/activityService';
 import { MonthCalendar } from '../components/Calendar/MonthCalendar';
@@ -35,7 +34,7 @@ import { ActivityForm } from '../components/Activities/ActivityForm';
 import { RecordActivityDialog } from '../components/Activities/RecordActivityDialog';
 import { statusColors } from '../theme/theme';
 import {
-  calculateStatus,
+  calculateActivityStatus,
   formatTimeDuration,
   formatRecordDate,
   MAX_NOTE_LENGTH
@@ -58,31 +57,8 @@ export function ActivityDetailPage() {
 
   // Calculate status and timing info
   const { lastRecordedDate, hoursSinceLastRecord, hoursUntilDue, status } = useMemo(() => {
-    if (!activity) return { lastRecordedDate: null, hoursSinceLastRecord: null, hoursUntilDue: undefined, status: undefined };
-
-    const dates = activity.records.map(r => r.date);
-    const lastDate = dates.length > 0 ? max(dates) : null;
-    const hoursSince = lastDate ? differenceInHours(new Date(), lastDate) : null;
-
-    if (!activity.everyHours) {
-      return {
-        lastRecordedDate: lastDate,
-        hoursSinceLastRecord: hoursSince,
-        hoursUntilDue: undefined,
-        status: undefined
-      };
-    }
-
-    const nextDue = lastDate ? addHours(lastDate, activity.everyHours) : null;
-    const hoursUntil = nextDue ? differenceInHours(nextDue, new Date()) : null;
-    const activityStatus = hoursUntil !== null ? calculateStatus(hoursUntil) : undefined;
-
-    return {
-      lastRecordedDate: lastDate,
-      hoursSinceLastRecord: hoursSince,
-      hoursUntilDue: hoursUntil,
-      status: activityStatus
-    };
+    if (!activity) return { lastRecordedDate: null, hoursSinceLastRecord: null, hoursUntilDue: null, status: null };
+    return calculateActivityStatus(activity);
   }, [activity]);
 
   const statusLabels: Record<ActivityStatus, string> = {

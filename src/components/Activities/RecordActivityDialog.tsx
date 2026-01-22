@@ -76,14 +76,16 @@ export function RecordActivityDialog({ open, onClose, activity }: RecordActivity
 
     setSubmitState({ submitting: true, error: null });
 
+    const selectedDate = selectedDateTime.toDate();
+    selectedDate.setSeconds(0, 0);
+
     try {
-      await activityService.recordDate(activity.id, selectedDateTime.toDate(), note || undefined);
+      await activityService.recordDate(activity.id, selectedDate, note || undefined);
+      setSubmitState({ submitting: false, error: null });
       onClose();
     } catch (error) {
       console.error('Failed to record activity:', error);
       setSubmitState({ submitting: false, error: 'Something went wrong. Please try again.' });
-    } finally {
-      setSubmitState(prev => ({...prev,  submitting: false }));
     }
   };
 
