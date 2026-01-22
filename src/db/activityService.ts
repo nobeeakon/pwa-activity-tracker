@@ -26,27 +26,27 @@ export const activityService = {
   },
 
   async recordDate(id: number, date: Date, note?: string): Promise<void> {
-    const activity = await db.activities.get(id);
-    if (activity) {
-      activity.records.push({ date, note });
-      await db.activities.update(id, { records: activity.records });
-    }
+    await db.activities.update(id, activity => {
+      if (activity) {
+        activity.records.push({ date, note });
+      }
+    });
   },
 
   async updateRecordNote(activityId: number, recordIndex: number, note?: string): Promise<void> {
-    const activity = await db.activities.get(activityId);
-    if (activity && activity.records[recordIndex]) {
-      activity.records[recordIndex].note = note;
-      await db.activities.update(activityId, { records: activity.records });
-    }
+    await db.activities.update(activityId, activity => {
+      if (activity && activity.records[recordIndex]) {
+        activity.records[recordIndex].note = note;
+      }
+    });
   },
 
   async deleteRecord(activityId: number, recordIndex: number): Promise<void> {
-    const activity = await db.activities.get(activityId);
-    if (activity && activity.records[recordIndex]) {
-      activity.records.splice(recordIndex, 1);
-      await db.activities.update(activityId, { records: activity.records });
-    }
+    await db.activities.update(activityId, activity => {
+      if (activity && activity.records[recordIndex]) {
+        activity.records.splice(recordIndex, 1);
+      }
+    });
   },
 
   // Delete

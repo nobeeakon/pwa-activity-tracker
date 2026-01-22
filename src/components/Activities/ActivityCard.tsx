@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Card,
   CardHeader,
@@ -32,7 +32,6 @@ type ActivityCardProps = {
 };
 
 export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
-  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [recordDialogOpen, setRecordDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -71,10 +70,10 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
     const activityStatus = hoursUntil !== null ? calculateStatus(hoursUntil) : undefined;
 
     return {
-    lastRecordedDate: lastDate,
-    hoursSinceLastRecord: hoursSince,
-    hoursUntilDue: hoursUntil,
-    status: activityStatus
+      lastRecordedDate: lastDate,
+      hoursSinceLastRecord: hoursSince,
+      hoursUntilDue: hoursUntil,
+      status: activityStatus
     };
    
   }, [activity.records, activity.everyHours]);
@@ -115,11 +114,6 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
     setCalendarExpanded(!calendarExpanded);
   };
 
-  const handleCardClick = () => {
-    if (activity.id) {
-      navigate(`/activity/${activity.id}`);
-    }
-  };
 
   const statusLabels: Record<ActivityStatus, string> = {
     onTrack: 'On Track',
@@ -133,15 +127,10 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       <Card 
         sx={{ 
           minWidth: { xs: '100%', sm: 350 },
-          cursor: 'pointer',
-          '&:hover': {
-            boxShadow: 3
-          }
         }}
-        onClick={handleCardClick}
       >
         <CardHeader
-          title={activity.name}
+          title={<Link to={`/activity/${activity.id}`}>{activity.name}</Link>}
           action={
             <IconButton onClick={handleMenuClick}>
               <MoreVert />
