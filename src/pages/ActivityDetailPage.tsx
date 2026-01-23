@@ -40,6 +40,7 @@ import { activityService } from '../db/activityService';
 import { MonthCalendar } from '../components/Calendar/MonthCalendar';
 import { ActivityForm } from '../components/Activities/ActivityForm';
 import { RecordActivityDialog } from '../components/Activities/RecordActivityDialog';
+import { InstallButton } from '../components/InstallButton';
 import { statusColors } from '../theme/theme';
 import {
   calculateActivityStatus,
@@ -167,6 +168,7 @@ export function ActivityDetailPage() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {activity.name}
           </Typography>
+          <InstallButton />
           <IconButton color="inherit" onClick={() => setEditFormOpen(true)}>
             <EditIcon />
           </IconButton>

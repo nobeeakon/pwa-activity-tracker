@@ -12,6 +12,7 @@ import { Add } from '@mui/icons-material';
 import { useActivities } from '../hooks/useActivities';
 import { ActivityList } from '../components/Activities/ActivityList';
 import { ActivityForm } from '../components/Activities/ActivityForm';
+import { InstallButton } from '../components/InstallButton';
 
 export function HomePage() {
   const activities = useActivities();
@@ -21,9 +22,10 @@ export function HomePage() {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Activity Tracker
           </Typography>
+          <InstallButton />
         </Toolbar>
       </AppBar>
 
