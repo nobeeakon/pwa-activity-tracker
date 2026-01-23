@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Box, Paper, Typography, IconButton } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import {
@@ -15,10 +14,15 @@ import {
 
 const CELL_HEIGHT = 40;
 
-export function MonthCalendar({ records }: {
+export function MonthCalendar({
+  records,
+  currentMonth,
+  onMonthChange
+}: {
   records: { date: Date; note?: string }[];
+  currentMonth: Date;
+  onMonthChange: (date: Date) => void;
 }) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const firstDay = startOfMonth(currentMonth);
   const lastDay = endOfMonth(currentMonth);
@@ -26,11 +30,11 @@ export function MonthCalendar({ records }: {
   const startDayOfWeek = getDay(firstDay);
 
   const handlePrevMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
+    onMonthChange(subMonths(currentMonth, 1));
   };
 
   const handleNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
+    onMonthChange(addMonths(currentMonth, 1));
   };
 
   const numberOfRecordsInDate = (date: Date) => {

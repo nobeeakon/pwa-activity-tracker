@@ -1,4 +1,14 @@
-import { format, formatDistanceToNow, addHours, differenceInHours, max } from 'date-fns';
+import {
+  format,
+  formatDistanceToNow,
+  addHours,
+  differenceInHours,
+  max,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+  isWithinInterval
+} from 'date-fns';
 import type { Activity, ActivityStatus } from '../types/activity';
 
 // Maximum length for record notes
@@ -97,5 +107,99 @@ export function calculateActivityStatus(activity: Activity): {
     hoursSinceLastRecord,
     hoursUntilDue,
     status,
+  };
+}
+
+// Interface for statistics data
+export interface ActivityStatistics {
+  recordCount: number;
+  averageTimeBetweenRecords: number | null; // in hours
+  averageTimeVsScheduled: number | null; // difference in hours (negative = faster than scheduled)
+}
+
+// Calculate statistics for a specific time period
+export function calculateStatistics(
+  records: { date: Date; note?: string }[],
+  startDate: Date,
+  endDate: Date,
+  everyHours?: number
+): ActivityStatistics {
+  // Filter records within the time period
+  const filteredRecords = records
+    .filter((record) =>
+      isWithinInterval(record.date, { start: startDate, end: endDate })
+    )
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const recordCount = filteredRecords.length;
+
+  // Calculate average time between records
+  let averageTimeBetweenRecords: number | null = null;
+  if (filteredRecords.length >= 2) {
+    const intervals: number[] = [];
+    for (let i = 1; i < filteredRecords.length; i++) {
+      const hours = differenceInHours(
+        filteredRecords[i].date,
+        filteredRecords[i - 1].date
+      );
+      intervals.push(hours);
+    }
+    const sum = intervals.reduce((acc, hours) => acc + hours, 0);
+    averageTimeBetweenRecords = sum / intervals.length;
+  }
+
+  // Calculate average time compared to scheduled time
+  let averageTimeVsScheduled: number | null = null;
+  if (everyHours !== undefined && averageTimeBetweenRecords !== null) {
+    // Negative means doing it faster than scheduled, positive means slower
+    averageTimeVsScheduled = averageTimeBetweenRecords - everyHours;
+  }
+
+  return {
+    recordCount,
+    averageTimeBetweenRecords,
+    averageTimeVsScheduled,
+  };
+}
+
+// Calculate statistics for predefined time periods
+export function calculatePeriodStatistics(activity: Activity): {
+  lastMonth: ActivityStatistics;
+  currentMonth: ActivityStatistics;
+  allTime: ActivityStatistics;
+} {
+  const now = new Date();
+
+  // Current month: start to end of current calendar month
+  const currentMonthStart = startOfMonth(now);
+  const currentMonthEnd = endOfMonth(now);
+
+  // Last month: start to end of previous calendar month
+  const lastMonthStart = startOfMonth(subMonths(now, 1));
+  const lastMonthEnd = endOfMonth(subMonths(now, 1));
+
+  // All time: from activity creation to now
+  const allTimeStart = activity.createdAt;
+  const allTimeEnd = now;
+
+  return {
+    lastMonth: calculateStatistics(
+      activity.records,
+      lastMonthStart,
+      lastMonthEnd,
+      activity.everyHours
+    ),
+    currentMonth: calculateStatistics(
+      activity.records,
+      currentMonthStart,
+      currentMonthEnd,
+      activity.everyHours
+    ),
+    allTime: calculateStatistics(
+      activity.records,
+      allTimeStart,
+      allTimeEnd,
+      activity.everyHours
+    ),
   };
 }

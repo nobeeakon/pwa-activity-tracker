@@ -152,7 +152,7 @@ export function ActivityList({ activities }: ActivityListProps) {
       ) : (
         <Grid container spacing={3} columns={{ xs: 1, sm: 12 }}>
           {filteredActivities.map(activity => (
-            <Grid item key={activity.id}>
+            <Grid item xs={1} sm="auto" key={activity.id}>
               <ActivityCard activity={activity} onEdit={handleEdit} />
             </Grid>
           ))}

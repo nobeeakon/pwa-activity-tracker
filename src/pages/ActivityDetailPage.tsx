@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { isSameMonth, format } from 'date-fns';
 import {
   AppBar,
   Toolbar,
@@ -17,7 +18,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper
 } from '@mui/material';
 import {
   ArrowBack,
@@ -37,7 +45,8 @@ import {
   calculateActivityStatus,
   formatTimeDuration,
   formatRecordDate,
-  MAX_NOTE_LENGTH
+  MAX_NOTE_LENGTH,
+  calculatePeriodStatistics
 } from '../utils/activityHelpers';
 import type { ActivityStatus } from '../types/activity';
 
@@ -54,6 +63,8 @@ export function ActivityDetailPage() {
   const [editingRecordIndex, setEditingRecordIndex] = useState<number | null>(null);
   const [editedNote, setEditedNote] = useState<string>('');
   const [savingRecordIndex, setSavingRecordIndex] = useState<number | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showMonthRecordsOnly, setShowMonthRecordsOnly] = useState(false);
 
   // Calculate status and timing info
   const { lastRecordedDate, hoursSinceLastRecord, hoursUntilDue, status } = useMemo(() => {
@@ -68,12 +79,24 @@ export function ActivityDetailPage() {
     overdue: 'Very Overdue'
   };
 
-  // Sort records newest first
+  // Sort records newest first, optionally filtered by calendar month
   const sortedRecords = useMemo(() => {
     if (!activity) return [];
-    return [...activity.records]
-      .map((record, index) => ({ ...record, originalIndex: index }))
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
+    let records = [...activity.records]
+      .map((record, index) => ({ ...record, originalIndex: index }));
+
+    // Filter by month if enabled
+    if (showMonthRecordsOnly) {
+      records = records.filter(record => isSameMonth(record.date, currentMonth));
+    }
+
+    return records.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [activity, showMonthRecordsOnly, currentMonth]);
+
+  // Calculate statistics for different time periods
+  const statistics = useMemo(() => {
+    if (!activity) return null;
+    return calculatePeriodStatistics(activity);
   }, [activity]);
 
   const handleBack = () => {
@@ -201,22 +224,178 @@ export function ActivityDetailPage() {
           )}
         </Box>
 
+        {/* Statistics */}
+        {statistics && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Statistics
+            </Typography>
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Period</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Last Month</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Current Month</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>All Time</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {/* Records Row */}
+                  <TableRow>
+                    <TableCell component="th" scope="row">
+                      Records
+                    </TableCell>
+                    <TableCell>{statistics.lastMonth.recordCount}</TableCell>
+                    <TableCell>{statistics.currentMonth.recordCount}</TableCell>
+                    <TableCell>{statistics.allTime.recordCount}</TableCell>
+                  </TableRow>
+
+                  {/* Avg. Time Between Row - only show if at least one period has data */}
+                  {(statistics.lastMonth.averageTimeBetweenRecords !== null ||
+                    statistics.currentMonth.averageTimeBetweenRecords !== null ||
+                    statistics.allTime.averageTimeBetweenRecords !== null) && (
+                    <TableRow>
+                      <TableCell component="th" scope="row">
+                        Avg. Time Between
+                      </TableCell>
+                      <TableCell>
+                        {statistics.lastMonth.averageTimeBetweenRecords !== null
+                          ? formatTimeDuration(statistics.lastMonth.averageTimeBetweenRecords)
+                          : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {statistics.currentMonth.averageTimeBetweenRecords !== null
+                          ? formatTimeDuration(statistics.currentMonth.averageTimeBetweenRecords)
+                          : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {statistics.allTime.averageTimeBetweenRecords !== null
+                          ? formatTimeDuration(statistics.allTime.averageTimeBetweenRecords)
+                          : '—'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {/* vs. Schedule Row - only show if activity has everyHours */}
+                  {activity.everyHours &&
+                    (statistics.lastMonth.averageTimeVsScheduled !== null ||
+                      statistics.currentMonth.averageTimeVsScheduled !== null ||
+                      statistics.allTime.averageTimeVsScheduled !== null) && (
+                      <TableRow>
+                        <TableCell component="th" scope="row">
+                          vs. Schedule
+                        </TableCell>
+                        <TableCell>
+                          {statistics.lastMonth.averageTimeVsScheduled !== null ? (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color:
+                                  statistics.lastMonth.averageTimeVsScheduled < 0
+                                    ? 'success.main'
+                                    : statistics.lastMonth.averageTimeVsScheduled > 0
+                                    ? 'warning.main'
+                                    : 'text.primary',
+                              }}
+                            >
+                              {statistics.lastMonth.averageTimeVsScheduled < 0
+                                ? `${formatTimeDuration(-statistics.lastMonth.averageTimeVsScheduled)} faster`
+                                : statistics.lastMonth.averageTimeVsScheduled > 0
+                                ? `${formatTimeDuration(statistics.lastMonth.averageTimeVsScheduled)} slower`
+                                : 'On schedule'}
+                            </Typography>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {statistics.currentMonth.averageTimeVsScheduled !== null ? (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color:
+                                  statistics.currentMonth.averageTimeVsScheduled < 0
+                                    ? 'success.main'
+                                    : statistics.currentMonth.averageTimeVsScheduled > 0
+                                    ? 'warning.main'
+                                    : 'text.primary',
+                              }}
+                            >
+                              {statistics.currentMonth.averageTimeVsScheduled < 0
+                                ? `${formatTimeDuration(-statistics.currentMonth.averageTimeVsScheduled)} faster`
+                                : statistics.currentMonth.averageTimeVsScheduled > 0
+                                ? `${formatTimeDuration(statistics.currentMonth.averageTimeVsScheduled)} slower`
+                                : 'On schedule'}
+                            </Typography>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {statistics.allTime.averageTimeVsScheduled !== null ? (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color:
+                                  statistics.allTime.averageTimeVsScheduled < 0
+                                    ? 'success.main'
+                                    : statistics.allTime.averageTimeVsScheduled > 0
+                                    ? 'warning.main'
+                                    : 'text.primary',
+                              }}
+                            >
+                              {statistics.allTime.averageTimeVsScheduled < 0
+                                ? `${formatTimeDuration(-statistics.allTime.averageTimeVsScheduled)} faster`
+                                : statistics.allTime.averageTimeVsScheduled > 0
+                                ? `${formatTimeDuration(statistics.allTime.averageTimeVsScheduled)} slower`
+                                : 'On schedule'}
+                            </Typography>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        )}
+
         {/* Calendar */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Calendar
           </Typography>
-          <MonthCalendar records={activity.records} />
+          <MonthCalendar
+            records={activity.records}
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+          />
         </Box>
 
         {/* Records List */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Records ({activity.records.length})
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="h6">
+              Records ({showMonthRecordsOnly ? sortedRecords.length : activity.records.length})
+            </Typography>
+            <Button
+              size="small"
+              variant={showMonthRecordsOnly ? 'contained' : 'outlined'}
+              onClick={() => setShowMonthRecordsOnly(!showMonthRecordsOnly)}
+            >
+              {showMonthRecordsOnly
+                ? `Showing ${format(currentMonth, 'MMMM yyyy')}`
+                : 'Show Current Month'}
+            </Button>
+          </Box>
           {sortedRecords.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              No records yet. Add your first record using the button below.
+              {showMonthRecordsOnly
+                ? `No records in ${format(currentMonth, 'MMMM yyyy')}.`
+                : 'No records yet. Add your first record using the button below.'}
             </Typography>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

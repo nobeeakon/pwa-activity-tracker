@@ -35,6 +35,7 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
   const [recordDialogOpen, setRecordDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [calendarExpanded, setCalendarExpanded] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const menuOpen = Boolean(anchorEl);
 
@@ -88,9 +89,10 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
 
   return (
     <>
-      <Card 
-        sx={{ 
-          minWidth: { xs: '100%', sm: 350 },
+      <Card
+        sx={{
+          width: { xs: '100%', sm: 'auto' },
+          minWidth: { sm: 350 },
         }}
       >
         <CardHeader
@@ -162,7 +164,13 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             {calendarExpanded ? 'Hide Calendar' : 'Show Calendar'}
           </Button>
 
-          {calendarExpanded && <MonthCalendar records={activity.records} />}
+          {calendarExpanded && (
+            <MonthCalendar
+              records={activity.records}
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
+            />
+          )}
         </CardContent>
       </Card>
 
