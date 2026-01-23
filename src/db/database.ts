@@ -1,8 +1,10 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Activity } from '../types/activity';
+import type { Tag } from '../types/tag';
 
 const db = new Dexie('ActivityTrackerDB') as Dexie & {
   activities: EntityTable<Activity, 'id'>;
+  tags: EntityTable<Tag, 'id'>;
 };
 
 // Version 1: Initial schema
@@ -75,6 +77,31 @@ db.version(3).stores({
   }
 
   console.log(`✅ Migration complete: ${migratedCount} activities updated with excludedDays field`);
+});
+
+// Version 4: Add tags table and tagIds field to activities
+db.version(4).stores({
+  activities: '++id, name, createdAt',
+  tags: '++id, name, createdAt'
+}).upgrade(async (trans) => {
+  console.log('🔄 Starting database migration from v3 to v4...');
+
+  const activities = await trans.table('activities').toArray();
+  let migratedCount = 0;
+
+  for (const activity of activities) {
+    // Initialize tagIds as empty array if not present
+    if (!activity.tagIds) {
+      await trans.table('activities').update(activity.id, {
+        tagIds: []
+      });
+      migratedCount++;
+      console.log(`  ✓ Initialized tagIds for activity "${activity.name}"`);
+    }
+  }
+
+  console.log(`✅ Migration complete: ${migratedCount} activities updated with tagIds field`);
+  console.log('📦 Tags table created successfully');
 });
 
 export { db };

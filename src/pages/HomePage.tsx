@@ -6,17 +6,21 @@ import {
   Container,
   Fab,
   Box,
-  Button
+  Button,
+  IconButton
 } from '@mui/material';
 import { Add } from '@mui/icons-material';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { useActivities } from '../hooks/useActivities';
 import { ActivityList } from '../components/Activities/ActivityList';
 import { ActivityForm } from '../components/Activities/ActivityForm';
 import { InstallButton } from '../components/InstallButton';
+import { TagManager } from '../components/Tags/TagManager';
 
 export function HomePage() {
   const activities = useActivities();
   const [formOpen, setFormOpen] = useState(false);
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -25,6 +29,13 @@ export function HomePage() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Activity Tracker
           </Typography>
+          <IconButton
+            color="inherit"
+            onClick={() => setTagManagerOpen(true)}
+            sx={{ mr: 1 }}
+          >
+            <LocalOfferIcon />
+          </IconButton>
           <InstallButton />
         </Toolbar>
       </AppBar>
@@ -79,6 +90,13 @@ export function HomePage() {
       {formOpen && (
         <ActivityForm
           onClose={() => setFormOpen(false)}
+        />
+      )}
+
+      {tagManagerOpen && (
+        <TagManager
+          open={tagManagerOpen}
+          onClose={() => setTagManagerOpen(false)}
         />
       )}
     </Box>

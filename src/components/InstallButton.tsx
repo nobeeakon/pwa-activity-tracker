@@ -12,8 +12,6 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 export function InstallButton() {
   const { isInstallable, installPrompt } = usePWAInstall();
 
-  console.log('hola', isInstallable)
-
   // Don't render if not installable or already installed
   if (!isInstallable) {
     return null;

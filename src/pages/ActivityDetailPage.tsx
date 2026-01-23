@@ -50,6 +50,8 @@ import {
   calculatePeriodStatistics
 } from '../utils/activityHelpers';
 import type { ActivityStatus } from '../types/activity';
+import { useActivityTags } from '../hooks/useTags';
+import { TagChip } from '../components/Tags/TagChip';
 
 export function ActivityDetailPage() {
   const { activityId } = useParams<{ activityId: string }>();
@@ -66,6 +68,8 @@ export function ActivityDetailPage() {
   const [savingRecordIndex, setSavingRecordIndex] = useState<number | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showMonthRecordsOnly, setShowMonthRecordsOnly] = useState(false);
+
+  const activityTags = useActivityTags(activity?.tagIds);
 
   // Calculate status and timing info
   const { lastRecordedDate, hoursSinceLastRecord, hoursUntilDue, status } = useMemo(() => {
@@ -185,6 +189,14 @@ export function ActivityDetailPage() {
             <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
               {activity.description}
             </Typography>
+          )}
+
+          {activityTags.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+              {activityTags.map(tag => (
+                <TagChip key={tag.id} tag={tag} size="medium" />
+              ))}
+            </Box>
           )}
 
           {activity.everyHours !== undefined && (

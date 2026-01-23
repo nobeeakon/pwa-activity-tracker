@@ -16,6 +16,8 @@ import {
 } from '@mui/material';
 import type { Activity } from '../../types/activity';
 import { activityService } from '../../db/activityService';
+import { tagService } from '../../db/tagService';
+import { ActivityTagSelector } from '../Tags/ActivityTagSelector';
 
 type ActivityFormProps = {
   open?: boolean;
@@ -29,6 +31,7 @@ type FormState = {
     description: string;
     everyHours: number | undefined;
     excludedDays: number[] | undefined;
+    tagIds: number[];
   };
   error: {
     name?: string;
@@ -42,7 +45,8 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
       name: activity?.name ?? '',
       description: activity?.description ?? '',
       everyHours: activity?.everyHours,
-      excludedDays: activity?.excludedDays
+      excludedDays: activity?.excludedDays,
+      tagIds: activity?.tagIds ?? []
     },
     error: {}
   });
@@ -69,9 +73,12 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
           everyHours: formState.data.everyHours,
           excludedDays: formState.data.excludedDays
         });
+
+        // Update tags
+        await tagService.setTagsForActivity(activity.id, formState.data.tagIds);
       } else {
         // Create new activity
-        await activityService.addActivity({
+        const newActivityId = await activityService.addActivity({
           name: formState.data.name.trim(),
           description: formState.data.description.trim(),
           createdAt: new Date(),
@@ -79,6 +86,11 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
           everyHours: formState.data.everyHours,
           excludedDays: formState.data.excludedDays
         });
+
+        // Add tags to new activity
+        if (formState.data.tagIds.length > 0) {
+          await tagService.bulkAddTagsToActivity(newActivityId, formState.data.tagIds);
+        }
       }
       onClose();
     } catch (error) {
@@ -122,6 +134,19 @@ export function ActivityForm({ open = true, onClose, activity }: ActivityFormPro
           }}
           sx={{ mb: 2 }}
         />
+
+        <Box sx={{ mb: 2 }}>
+          <ActivityTagSelector
+            value={formState.data.tagIds}
+            onChange={(tagIds) => {
+              setFormState(prev => ({
+                ...prev,
+                data: { ...prev.data, tagIds }
+              }));
+            }}
+          />
+        </Box>
+
         <FormControlLabel
           control={
             <Checkbox

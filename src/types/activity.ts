@@ -5,7 +5,9 @@ export interface Activity {
   createdAt: Date;
   records: { date: Date; note?: string }[];
   everyHours?: number;
-  excludedDays?: number[]; // 0=Sunday, 6=Saturday
+  /** 0=Sunday, 6=Saturday */
+  excludedDays?: number[]; 
+  tagIds?: number[];
 }
 
 export type ActivityStatus = 'onTrack' | 'almostOverdue' | 'shortOverdue' | 'overdue';

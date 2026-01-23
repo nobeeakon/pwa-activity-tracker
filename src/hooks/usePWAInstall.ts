@@ -85,7 +85,7 @@ export function usePWAInstall(): UsePWAInstallReturn {
   };
 
   return {
-    isInstallable: deferredPrompt !== null && !isInstalled,
+    isInstallable: deferredPrompt != null && !isInstalled,
     isInstalled,
     installPrompt,
   };

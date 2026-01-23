@@ -11,6 +11,8 @@ import { Search as SearchIcon, FilterList as FilterListIcon , Check as CheckIcon
 import type { Activity } from '../../types/activity';
 import { ActivityCard } from './ActivityCard';
 import { ActivityForm } from './ActivityForm';
+import { useTags } from '../../hooks/useTags';
+import { TagChip } from '../Tags/TagChip';
 
 type ActivityListProps = {
   activities: Activity[];
@@ -24,6 +26,9 @@ export function ActivityList({ activities }: ActivityListProps) {
   const [nameFilter, setNameFilter] = useState('');
   const [debouncedNameFilter, setDebouncedNameFilter] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<ActivityType[]>(['scheduled', 'nonScheduled']);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+
+  const allTags = useTags();
 
   // Debounce name filter
   useEffect(() => {
@@ -46,6 +51,12 @@ export function ActivityList({ activities }: ActivityListProps) {
       const isScheduled = activity.everyHours !== undefined;
       if (selectedTypes.includes('scheduled') && !isScheduled) return false;
       if (selectedTypes.includes('nonScheduled') && isScheduled) return false;
+    }
+
+    // Tag filter (OR logic: match any selected tag)
+    if (selectedTagIds.length > 0) {
+      const hasSelectedTag = activity.tagIds?.some(id => selectedTagIds.includes(id));
+      if (!hasSelectedTag) return false;
     }
 
     return true;
@@ -76,6 +87,16 @@ export function ActivityList({ activities }: ActivityListProps) {
       } else {
         // Add if not selected
         return [...prev, clickedType];
+      }
+    });
+  };
+
+  const handleTagClick = (tagId: number) => {
+    setSelectedTagIds(prev => {
+      if (prev.includes(tagId)) {
+        return prev.filter(id => id !== tagId);
+      } else {
+        return [...prev, tagId];
       }
     });
   };
@@ -129,6 +150,26 @@ export function ActivityList({ activities }: ActivityListProps) {
           </ToggleButton>
         </Box>
       </Box>
+
+      {/* Tag Filter */}
+      {allTags.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Filter by tags:
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {allTags.map(tag => (
+              <TagChip
+                key={tag.id}
+                tag={tag}
+                size="small"
+                onClick={() => handleTagClick(tag.id!)}
+                selected={selectedTagIds.includes(tag.id!)}
+              />
+            ))}
+          </Box>
+        </Box>
+      )}
 
       {filteredActivities.length === 0 ? (
         <Box 

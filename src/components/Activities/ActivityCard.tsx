@@ -24,6 +24,8 @@ import { statusColors } from '../../theme/theme';
 import { MonthCalendar } from '../Calendar/MonthCalendar';
 import { RecordActivityDialog } from './RecordActivityDialog';
 import { calculateActivityStatus, formatTimeDuration } from '../../utils/activityHelpers';
+import { useActivityTags } from '../../hooks/useTags';
+import { TagChip } from '../Tags/TagChip';
 
 type ActivityCardProps = {
   activity: Activity;
@@ -38,6 +40,7 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const menuOpen = Boolean(anchorEl);
+  const activityTags = useActivityTags(activity.tagIds);
 
   const { lastRecordedDate, hoursSinceLastRecord, hoursUntilDue, status } = useMemo(() => {
     return calculateActivityStatus(activity);
@@ -108,6 +111,14 @@ export function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {activity.description}
             </Typography>
+          )}
+
+          {activityTags.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 2 }}>
+              {activityTags.map(tag => (
+                <TagChip key={tag.id} tag={tag} size="small" />
+              ))}
+            </Box>
           )}
 
           {activity.everyHours !== undefined && (
