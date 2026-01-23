@@ -118,17 +118,20 @@ export interface ActivityStatistics {
 }
 
 // Calculate statistics for a specific time period
-export function calculateStatistics(
+export function calculateStatistics({
+  records,
+  startDate,
+  endDate,
+  everyHours
+}: {
   records: { date: Date; note?: string }[],
   startDate: Date,
   endDate: Date,
   everyHours?: number
-): ActivityStatistics {
+}): ActivityStatistics {
   // Filter records within the time period
   const filteredRecords = records
-    .filter((record) =>
-      isWithinInterval(record.date, { start: startDate, end: endDate })
-    )
+    .filter((record) => isWithinInterval(record.date, { start: startDate, end: endDate }))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
   const recordCount = filteredRecords.length;
@@ -170,36 +173,39 @@ export function calculatePeriodStatistics(activity: Activity): {
 } {
   const now = new Date();
 
-  // Current month: start to end of current calendar month
   const currentMonthStart = startOfMonth(now);
   const currentMonthEnd = endOfMonth(now);
 
-  // Last month: start to end of previous calendar month
   const lastMonthStart = startOfMonth(subMonths(now, 1));
   const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
-  // All time: from activity creation to now
-  const allTimeStart = activity.createdAt;
+  // For allTime, use the earliest date between activity creation and first record
+  // This handles cases where records have dates before the activity was created
+  const firstRecordDate = activity.records.length > 0
+    ? activity.records.reduce((earliest, record) =>
+        record.date < earliest ? record.date : earliest, activity.records[0].date)
+    : activity.createdAt;
+  const allTimeStart = firstRecordDate < activity.createdAt ? firstRecordDate : activity.createdAt;
   const allTimeEnd = now;
 
   return {
-    lastMonth: calculateStatistics(
-      activity.records,
-      lastMonthStart,
-      lastMonthEnd,
-      activity.everyHours
-    ),
-    currentMonth: calculateStatistics(
-      activity.records,
-      currentMonthStart,
-      currentMonthEnd,
-      activity.everyHours
-    ),
-    allTime: calculateStatistics(
-      activity.records,
-      allTimeStart,
-      allTimeEnd,
-      activity.everyHours
-    ),
+    lastMonth: calculateStatistics({
+      records:activity.records,
+      startDate: lastMonthStart,
+      endDate: lastMonthEnd,
+      everyHours:activity.everyHours
+    }),
+    currentMonth: calculateStatistics({
+      records:activity.records,
+      startDate: currentMonthStart,
+      endDate: currentMonthEnd,
+      everyHours:activity.everyHours
+    }),
+    allTime: calculateStatistics({
+      records:activity.records,
+      startDate: allTimeStart,
+      endDate: allTimeEnd,
+      everyHours:activity.everyHours
+    }),
   };
 }
